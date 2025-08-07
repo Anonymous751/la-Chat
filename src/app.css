@@ -1,0 +1,18 @@
+.app-container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  background: rgba(17, 25, 40, 0.95);
+  color: white;
+  font-family: "Segoe UI", sans-serif;
+
+ 
+  .login {
+    margin: auto;
+  }
+
+   *:not(.login) {
+    flex: 1;
+    
+  }
+}

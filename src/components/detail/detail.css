@@ -1,0 +1,130 @@
+.detail {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(17, 25, 40, 0.5);
+  border-left: 1px solid #dddddd35;
+  overflow: hidden;
+
+  .user {
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid #dddddd35;
+    flex-shrink: 0;
+
+    img {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      color: white;
+    }
+
+    p {
+      font-size: 14px;
+      color: #a5a5a5;
+      text-align: center;
+    }
+  }
+
+  .info {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    overflow-y: auto;
+
+    .option {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+
+      .title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        span {
+          font-size: 16px;
+          color: white;
+          font-weight: 500;
+        }
+
+        img {
+          width: 24px;
+          height: 24px;
+          background-color: rgba(17, 25, 40, 0.3);
+          border-radius: 50%;
+          padding: 6px;
+          cursor: pointer;
+        }
+      }
+
+      .photos {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+
+        .photoItem {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+
+          .photoDetail {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+
+            img {
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              object-fit: cover;
+            }
+
+            span {
+              font-size: 14px;
+              color: #cfcfcf;
+              font-weight: 300;
+            }
+          }
+
+          .icon {
+            width: 28px;
+            height: 28px;
+            background-color: rgba(17, 25, 40, 0.3);
+            padding: 6px;
+            border-radius: 50%;
+            cursor: pointer;
+            object-fit: contain;
+          }
+        }
+      }
+    }
+
+    button {
+        width: 100%;
+      padding: 10px;
+      background-color: rgba(220, 74, 105, 0.5);
+      border: none;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      align-self: flex-start;
+
+      &:hover {
+        background-color: rgba(194, 23, 60, 0.5);
+      }
+    }
+  }
+}
