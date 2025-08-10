@@ -1,129 +1,170 @@
+// src/components/chat/Chat.jsx
 import { useEffect, useRef, useState } from "react";
 import "./chat.css";
 import EmojiPicker from "emoji-picker-react";
+import { useChatStore } from "../../lib/chatStore";
+import { useUserStore } from "../../lib/userStore";
+import {
+  doc,
+  onSnapshot,
+  updateDoc,
+  arrayUnion,
+  Timestamp,
+  setDoc,
+  getDoc,
+} from "firebase/firestore";
+import { db } from "../../lib/Firebase";
 
 const Chat = () => {
-  const [open, setopen] = useState(false);
-  const [text, setText] = useState("")
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [messages, setMessages] = useState([]);
+  const endRef = useRef(null);
 
+  const { user, chatId } = useChatStore();
+  const { currentUser } = useUserStore();
 
-  const endref = useRef(null)
+  // Auto-scroll on new messages
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-  useEffect(()=> {
-    endref.current?.scrollIntoView({behavior: "smooth"})
-  },[]);
+  // Load messages in real-time for selected chat
+  useEffect(() => {
+    if (!chatId) {
+      setMessages([]);
+      return;
+    }
+
+    const unsub = onSnapshot(doc(db, "chats", chatId), (docSnap) => {
+      setMessages(docSnap.exists() ? docSnap.data().messages || [] : []);
+    });
+
+    return () => unsub();
+  }, [chatId]);
 
   const handleEmoji = (e) => {
-    setText((prev)=> prev + e.emoji);
-    setopen(false)
+    setText((prev) => prev + e.emoji);
+    setOpen(false);
   };
 
-  
+  const handleSend = async () => {
+    if (!text.trim() || !chatId) return;
+
+    try {
+      const chatRef = doc(db, "chats", chatId);
+      const chatSnap = await getDoc(chatRef);
+
+      if (!chatSnap.exists()) {
+        // Create chat document if it doesn't exist
+        await setDoc(chatRef, { messages: [] });
+      }
+
+      await updateDoc(chatRef, {
+        messages: arrayUnion({
+          senderId: currentUser.id,
+          text,
+          createdAt: Timestamp.now(),
+        }),
+      });
+
+      setText("");
+    } catch (error) {
+      console.error("Error sending message:", error);
+      // Optionally show error to user via toast or UI
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="chat empty">
+        <p>Select a chat to start messaging</p>
+      </div>
+    );
+  }
 
   return (
-    // Wrapper
     <div className="chat">
-
-        {/* Top  */}
+      {/* Top */}
       <div className="top">
         <div className="user">
-          <img src="./avatar.png" alt="" />
+          <img src={user.avatar || "./avatar.png"} alt="avatar" />
           <div className="texts">
-            <span>William</span>
-            <p>Lorem ipsum dolor sit amet </p>
+            <span>{user.username}</span>
+            <p>{user.bio || "Hey there! I'm using ChatApp"}</p>
           </div>
         </div>
         <div className="icons">
-          <img src="./phone.png" alt="" />
-          <img src="./video.png" alt="" />
-          <img src="./info.png" alt="" />
+          <img src="./phone.png" alt="call" />
+          <img src="./video.png" alt="video" />
+          <img src="./info.png" alt="info" />
         </div>
       </div>
 
-{/* Middle */}
+      {/* Middle */}
       <div className="center">
-   
-    <div className="messages ">
-        <img src="./avatar.png" alt="" />
-        <div className="texts">
-        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Id velit soluta iunt necessitatibus eum delectus eaque!</p>
-        <span>1 min ago</span>
-        </div>
-    </div>
-
-
-     <div className="messages own">
-        <img src="./avatar.png" alt="" />
-        <div className="texts">
-        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Id velit soluta iunt necessitatibus eum delectus eaque!</p>
-        <span>1 min ago</span>
-        </div>
-    </div>
-
-     <div className="messages ">
-        <img src="./avatar.png" alt="" />
-        <div className="texts">
-        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Id velit soluta iunt necessitatibus eum delectus eaque!</p>
-        <span>1 min ago</span>
-        </div>
-    </div>
-
-     <div className="messages own">
-        <img src="./avatar.png" alt="" />
-        <div className="texts">
-        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Id velit soluta iunt necessitatibus eum delectus eaque!</p>
-        <span>1 min ago</span>
-        </div>
-    </div>
-
-     <div className="messages ">
-        <img src="./avatar.png" alt="" />
-        <div className="texts">
-        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Id velit soluta iunt necessitatibus eum delectus eaque!</p>
-        <span>1 min ago</span>
-        </div>
-    </div>
-
-     <div className="messages own">
-        <img src="./avatar.png" alt="" />
-        <div className="texts">
-        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Id velit soluta consectetur. Repellat, eius eum blanditiis necessitatibus vitae veritatis facilis </p>
-        <span>1 min ago</span>
-        </div>
-    </div>
-
-     <div className="messages ">
-        <img src="./avatar.png" alt="" />
-        <div className="texts">
-            <img src="https://images.pexels.com/photos/2325447/pexels-photo-2325447.jpeg" alt="" />
-        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Id velit soluta  asperiores maiores velit. In sint nesciunt necessitatibus eum delectus eaque!</p>
-        <span>1 min ago</span>
-        </div>
-    </div>
-    <div ref={endref}></div>
-    
+        {messages.map((msg, index) => (
+          <div
+            key={index}
+            className={`messages ${
+              msg.senderId === currentUser.id ? "own" : ""
+            }`}
+          >
+            <img
+              src={
+                msg.senderId === currentUser.id
+                  ? currentUser.avatar || "./avatar.png"
+                  : user.avatar || "./avatar.png"
+              }
+              alt="avatar"
+            />
+            <div className="texts">
+              <p>{msg.text}</p>
+              <span>
+                {msg.createdAt
+                  ? msg.createdAt.toDate().toLocaleString()
+                  : "Just now"}
+              </span>
+            </div>
+          </div>
+        ))}
+        <div ref={endRef}></div>
       </div>
 
-
-{/* Bottom */}
+      {/* Bottom */}
       <div className="bottom">
         <div className="icons">
-          <img src="./img.png" alt="" />
-          <img src="./camera.png" alt="" />
-          <img src="./mic.png" alt="" />
+          <img src="./img.png" alt="img" />
+          <img src="./camera.png" alt="camera" />
+          <img src="./mic.png" alt="mic" />
         </div>
-        <input type="text" name="" id="" placeholder="Type your message..." value={text} onChange={e=> setText(e.target.value)} />
+        <input
+          type="text"
+          placeholder="Type your message..."
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
+        />
         <div className="emoji">
           <img
             src="./emoji.png"
-            alt=""
-            onClick={() => setopen((prev) => !prev)}
+            alt="emoji"
+            onClick={() => setOpen((prev) => !prev)}
           />
-          <div className="picker">
-          <EmojiPicker open={open} onEmojiClick={handleEmoji} />
-          </div>
+          {open && (
+            <div className="picker">
+              <EmojiPicker onEmojiClick={handleEmoji} />
+            </div>
+          )}
         </div>
-        <button className="sendButton">Send</button>
+        <button className="sendButton" onClick={handleSend}>
+          Send
+        </button>
       </div>
     </div>
   );
